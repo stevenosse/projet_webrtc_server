@@ -12,14 +12,20 @@ import cors from 'cors'
  */
 import roomEvents from './listeners/room.listener.js'
 
+/**
+ * Retrieve Certificates
+ * 
+ * Necessary for the app to be usable over https
+ */
 app.getCerts().then(certs => {
 
   app.use(cors());
 
+  /**
+   * Creating the http server and socket.io instance
+   */
   const server = https.createServer(certs, app)
   const io = SocketIO(server, { origins: '*:*' })
-
-
 
   app.get('/', (req, res) => {
     res.send({
@@ -28,10 +34,16 @@ app.getCerts().then(certs => {
     })
   })
 
+  /**
+   * Binding events on user connected
+   */
   io.on('connection', socket => {
     roomEvents(socket)
   })
 
+  /**
+   * Listening to queries on port 3000
+   */
   server.listen(3000, () => {
     console.log("Server started on port 3000")
   })
