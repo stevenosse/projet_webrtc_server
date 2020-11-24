@@ -2,8 +2,10 @@ import BaseModel from './BaseModel.js'
 
 const tableName = 'rooms'
 
+/**
+ * Room Model
+ */
 export default class Room extends BaseModel {
-
   constructor(subject, duration, holder) {
     super()
     this.subject = subject
