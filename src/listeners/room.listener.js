@@ -62,6 +62,8 @@ export default (socket) => {
     if (room) {
       socket.join(room._id)
       socket.to(room._id).emit('user-joined', data)
+      socket.broadcast.emit('user-joined', data)
+
       socket.emit('join-room', room)
     } else {
       socket.emit('room-does-not-exist')
@@ -73,14 +75,24 @@ export default (socket) => {
    */
   socket.on('stream', data => {
     // TODO: Emit event only to the concerned room
-    socket.broadcast.emit('user-stream', data)
+    let room = new Room()
+    room = room.find(data.room)
+
+    if(room) {
+      socket.broadcast.emit('user-stream', {
+        ...data,
+        sid: socket.id
+      })
+    }
   })
 
   /**
    * Disconnects the user
    */
   socket.on('disconnect', data => {
-    // TODO: Implement this method
-    console.log(data)
+    // TODO: Emit only to the concerned room
+    socket.broadcast.emit("user-leaved", {
+      sid: socket.id
+    })
   })
 }

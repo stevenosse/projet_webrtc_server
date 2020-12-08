@@ -27,6 +27,10 @@ app.getCerts().then(certs => {
   const server = https.createServer(certs, app)
   const io = SocketIO(server, { origins: '*:*' })
 
+  app.use('/peerjs', ExpressPeerServer(server, {
+    debug: true
+  }));
+
   app.get('/', (req, res) => {
     res.send({
       name: 'Supervisor',
