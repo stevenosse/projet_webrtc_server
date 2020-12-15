@@ -6,7 +6,7 @@ import Room from '../models/Room.js'
  * These listeners are registered once the application is started
  * and a new connection is coming in.
  */
-export default (socket) => {
+export default (socket, io) => {
   /**
    * When the teacher enters a room, we need to add him
    * to the room for him to receive all that room related events.
@@ -61,8 +61,7 @@ export default (socket) => {
 
     if (room) {
       socket.join(room._id)
-      socket.to(room._id).emit('user-joined', data)
-      socket.broadcast.emit('user-joined', data)
+      socket.to(room.holder).emit('user-joined', data);
 
       socket.emit('join-room', room)
     } else {
@@ -74,24 +73,30 @@ export default (socket) => {
    * Transmits device screenshots continuously
    */
   socket.on('stream', data => {
-    // TODO: Emit event only to the concerned room
     let room = new Room()
     room = room.find(data.room)
 
     if(room) {
-      socket.broadcast.emit('user-stream', {
+      socket.to(room.holder).emit('user-stream', {
         ...data,
         sid: socket.id
       })
     }
   })
 
+  socket.on('start-unique-user-stream', data => {
+    socket.to(data.student_id).emit('start-unique-user-stream', data)
+  })
+
+  socket.on('unique-user-stream', data => {
+    socket.to(data.teacher_id).emit('unique-user-stream', data)
+  })
+
   /**
    * Disconnects the user
    */
-  socket.on('disconnect', data => {
-    // TODO: Emit only to the concerned room
-    socket.broadcast.emit("user-leaved", {
+  socket.on('disconnect', (_) => {
+    socket.emit("user-leaved", {
       sid: socket.id
     })
   })

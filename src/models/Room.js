@@ -31,7 +31,7 @@ export default class Room extends BaseModel {
   }
 
   update(id, data) {
-    this.db.get('posts')
+    this.db.get('rooms')
       .find({ _id: id })
       .assign(data)
       .write()

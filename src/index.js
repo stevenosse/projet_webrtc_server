@@ -42,7 +42,7 @@ app.getCerts().then(certs => {
    * Binding events on user connected
    */
   io.on('connection', socket => {
-    roomEvents(socket)
+    roomEvents(socket, io)
   })
 
   /**
