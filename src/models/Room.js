@@ -24,14 +24,14 @@ export default class Room extends BaseModel {
       .write()
   }
 
-  find(id) {
-    return this.db.get(tableName)
+  static find(id) {
+    return new this().db.get(tableName)
       .find({ _id: id })
       .value()
   }
 
-  update(id, data) {
-    this.db.get('rooms')
+  static update(id, data) {
+    new this().db.get('rooms')
       .find({ _id: id })
       .assign(data)
       .write()

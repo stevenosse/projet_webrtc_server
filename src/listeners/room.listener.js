@@ -1,10 +1,13 @@
 import Room from "../models/Room.js";
-import logger from '../core/logger.js'
+import logger from "../core/logger.js";
+import RoomEvents from "../core/events/room_events.js";
+import DefaultEvents from "../core/events/default_events.js";
+
 /**
  * Responsible of the listening of all the room related events
  *
- * These listeners are registered once the application is started
- * and a new connection is coming in.
+ * These listeners are registered once the app is launched
+ * and binded when a new user connects.
  */
 
 export default (socket, io) => {
@@ -17,14 +20,10 @@ export default (socket, io) => {
    *    "id":   "the teacher id"
    * }
    */
-  socket.on("holder-id", (data) => {
-    let room = new Room();
-
-    room.update(data.room, {
+  socket.on(RoomEvents.HOLDER_ID, (data) => {
+    Room.update(data.room, {
       holder: socket.id,
     });
-
-    socket.join(room._id);
   });
 
   /**
@@ -37,14 +36,12 @@ export default (socket, io) => {
    *
    * @emits room-created to notify the iniator the room was created.
    */
-  socket.on("create-room", (data) => {
+  socket.on(RoomEvents.CREATE_ROOM_EVENT, (data, ack) => {
     const room = new Room(data.subject, data.duration, socket.id);
     room.save();
 
-    socket.join(room._id);
-
-    socket.emit("room-created", room);
-    logger.write(room, `Session créée, durée: ${room.duration}, Sujet: ${room.subject}`)
+    ack(room);
+    logger.write(room, `Début de la session ${room.subject}`);
   });
 
   /**
@@ -55,66 +52,94 @@ export default (socket, io) => {
    *    "name": "the name of the user trying to join the room"
    * }
    */
-  socket.on("join-room", (data) => {
-    let room = new Room();
-    room = room.find(data.room);
+  socket.on(RoomEvents.JOIN_ROOM_EVENT, (data, ack) => {
+    let room = Room.find(data.room);
 
     if (room) {
-      socket.join(room._id);
-      socket.to(room.holder).emit("user-joined", data);
+      socket.to(room.holder).emit(RoomEvents.USER_JOINED, data);
+      ack(room);
 
-      socket.emit("join-room", room);
-      logger.write(room, `Nouvelle connexion de ${data.name}`)
+      logger.write(room, `Nouvelle connexion de ${data.name}`);
     } else {
-      socket.emit("room-does-not-exist");
+      ack(null);
     }
   });
 
   /**
    * Transmits device screenshots continuously
+   * @param data {
+   *    name: "The student name",
+        stream: "The converted image (base64 encoded)",
+        room: "The room id",
+   * }
    */
-  socket.on("stream", (data) => {
-    let room = new Room();
-    room = room.find(data.room);
+  socket.on(RoomEvents.STREAM, (data) => {
+    let room = Room.find(data.room);
 
     if (room) {
-      socket.to(room.holder).emit("user-stream", {
+      socket.to(room.holder).emit(RoomEvents.USER_STREAM, {
         ...data,
         sid: socket.id,
       });
     }
   });
 
-  socket.on("start-unique-user-stream", (data) => {
+  /**
+   * Triggered when the teacher wants to have a screen of a student
+   * with realtime update
+   *
+   * @param data {
+   *    student_id: "The student socket id"
+   *    teacher_id: "The teacher socket id"
+   * }
+   */
+  socket.on(RoomEvents.START_UNIQUE_USER_STREAM, (data) => {
     data.teacher_id = socket.id;
-    socket.to(data?.student_id).emit("start-unique-user-stream", data);
+    socket.to(data?.student_id).emit(RoomEvents.START_UNIQUE_USER_STREAM, data);
   });
 
-  socket.on("unique-user-stream", (data) => {
-    socket.to(data?.teacher_id).emit("unique-user-stream", data);
+  /**
+   * Triggered when the user starts sharing
+   * his screen through a P2P connection
+   * with the teacher
+   *
+   * @param data {
+   *    student_id: "The student socket id"
+   *    teacher_id: "The teacher socket id"
+   * }
+   */
+  socket.on(RoomEvents.UNIQUE_USER_STREAM, (data) => {
+    socket.to(data?.teacher_id).emit(RoomEvents.UNIQUE_USER_STREAM, data);
   });
 
-  socket.on("terminate-session", (data) => {
+  /**
+   * Fired by the teacher
+   *
+   *
+   * @param data {
+   *    students: "The list of the students's socket"
+   *    room: "The room id"
+   * }
+   */
+  socket.on(RoomEvents.TERMINATE_SESSION, (data) => {
     const students = data?.students || [];
-    for (const id of students) {
-      socket.to(id).emit("leave-now");
-    }
-    let room = new Room();
-    room = room.find(data.room);
-    logger.write(room, `Fin de la session.`)
+    students.forEach((id) => {
+      socket.to(id).emit(RoomEvents.LEAVE_NOW);
+    });
+
+    const room = Room.find(data.room);
+    logger.write(room, `Fin de la session sur ${room.subject}.`);
   });
 
-  socket.on("user-leaved", data => {
-    let room = new Room();
-    room = room.find(data.room);
-    logger.write(room, `Déconnexion de ${data.username}`)
-  })
+  socket.on(RoomEvents.USER_LEAVED, (data) => {
+    const room = Room.find(data.room);
+    logger.write(room, `Déconnexion de ${data.username}`);
+  });
 
   /**
    * Disconnects the user
    */
-  socket.on("disconnect", (_) => {
-    // TODO: rajouter les déconnexions aux logs
+  socket.on(DefaultEvents.DISCONNECT, (_) => {
     socket.broadcast.emit("user-leaved", {
       sid: socket.id,
     });

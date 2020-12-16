@@ -14,8 +14,7 @@ class Logger {
       `[${date}] - ${message}\n`,
       { flag: "a+" },
       (err) => {
-        if (err) throw err;
-        console.log("Failed to write log");
+        if (err) console.log(err);
       }
     );
   }

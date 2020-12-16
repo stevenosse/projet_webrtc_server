@@ -2,7 +2,6 @@ import express from 'express'
 import httpsLocalhostHost from 'https-localhost'
 import https from 'https'
 import SocketIO from 'socket.io'
-import { ExpressPeerServer } from 'peer'
 
 const app = httpsLocalhostHost()
 
@@ -27,10 +26,11 @@ app.getCerts().then(certs => {
   const server = https.createServer(certs, app)
   const io = SocketIO(server, { origins: '*:*' })
 
-  app.use('/peerjs', ExpressPeerServer(server, {
-    debug: true
-  }));
-
+  /**
+   * When the default path is accessed through 
+   * a browser or a rest call, return a JSON object
+   * with the app name and version.
+   */
   app.get('/', (req, res) => {
     res.send({
       name: 'Supervisor',
