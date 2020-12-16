@@ -85,18 +85,27 @@ export default (socket, io) => {
   })
 
   socket.on('start-unique-user-stream', data => {
-    socket.to(data.student_id).emit('start-unique-user-stream', data)
+    data.teacher_id = socket.id
+    socket.to(data?.student_id).emit('start-unique-user-stream', data)
   })
 
   socket.on('unique-user-stream', data => {
-    socket.to(data.teacher_id).emit('unique-user-stream', data)
+    socket.to(data?.teacher_id).emit('unique-user-stream', data)
+  })
+
+  socket.on("terminate-session", data => {
+    console.log(data.students)
+    const students = data?.students || []
+    for(const id of students) {
+      socket.to(id).emit("leave-now")
+    }
   })
 
   /**
    * Disconnects the user
    */
   socket.on('disconnect', (_) => {
-    socket.emit("user-leaved", {
+    socket.broadcast.emit("user-leaved", {
       sid: socket.id
     })
   })
