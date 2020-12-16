@@ -1,5 +1,5 @@
 import Room from "../models/Room.js";
-import logger from "../core/logger.js";
+import logger from "../core/utils/Logger.js";
 import RoomEvents from "../core/events/room_events.js";
 import DefaultEvents from "../core/events/default_events.js";
 

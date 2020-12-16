@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 
 const root = path.resolve("./");
-console.log(root);
 const logPath = `${root}/resources/logs`;
 
 class Logger {

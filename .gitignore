@@ -2,4 +2,6 @@
 package-lock.json
 db.json
 
-/resources/logs/*
+/resources/logs/
+
+.env

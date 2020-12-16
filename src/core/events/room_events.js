@@ -1,3 +1,6 @@
+/**
+ * Predefine room events
+ */
 const RoomEvents = {
   HOLDER_ID: "holder-id",
   CREATE_ROOM_EVENT: "create-room",
