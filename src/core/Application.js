@@ -19,7 +19,7 @@ export default class Application {
    *    - routes: The list of routes to use by the app
    */
   config = {
-    name: "MS2D-APP",
+    name: "MS2D-2020-APP",
     port: 3000,
     version: 0.1,
     routes: []
